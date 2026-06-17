@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "../../../node_modules/vue/dist/vue.esm-browser.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      // import { reactive, effect } from "vue";
+      import { reactive } from "./reactivity.js";
+      let obj = { name: "张三", age: 18 };
+
+      const state = reactive(obj);
+      console.log(state.name, state.age);
+
+      // effect(() => {
+      //   document.querySelector("#app").innerHTML =
+      //     `name = ${state.name},age = ${state.age}`;
+      // });
+
+      // setInterval(() => {
+      //   state.age++;
+      // }, 1000);
+    </script>
+  </body>
+</html>

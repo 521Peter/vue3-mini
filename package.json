@@ -1,0 +1,29 @@
+{
+  "name": "vue3.4",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node srcipts/dev.js reactivity -f esm"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.4.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "dependencies": {
+    "vue": "^3.4.38"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1",
+    "minimist": "^1.2.8",
+    "typescript": "^6.0.3"
+  }
+}
