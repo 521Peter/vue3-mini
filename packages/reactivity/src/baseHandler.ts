@@ -1,4 +1,6 @@
+import { isObject } from "@vue/shared";
 import { track, trigger } from "./reactiveEffect";
+import { reactive } from "./reactive";
 
 // baseHandler.ts
 export enum ReactiveFlags {
@@ -12,7 +14,13 @@ export const mutableHandlers: ProxyHandler<any> = {
     // 依赖收集，记录哪些地方用到这个数据
     track(target, key);
 
-    return Reflect.get(target, key, receiver);
+    let result = Reflect.get(target, key, receiver);
+    // 实现深层代理（懒代理）
+    if (isObject(result)) {
+      result = reactive(result);
+    }
+
+    return result;
   },
   set(target, key, value, receiver) {
     let oldValue = target[key];

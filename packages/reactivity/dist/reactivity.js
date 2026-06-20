@@ -37,6 +37,7 @@ var ReactiveEffect = class {
     this._trackId = 0;
     this.deps = [];
     this._depsLength = 0;
+    this.isRunning = false;
     this.active = true;
   }
   run() {
@@ -45,10 +46,12 @@ var ReactiveEffect = class {
     let lastEffect = activeEffect;
     try {
       activeEffect = this;
+      this.isRunning = true;
       return this.fn();
     } finally {
       postCleanEffect(this);
       activeEffect = lastEffect;
+      this.isRunning = false;
     }
   }
 };
@@ -74,7 +77,7 @@ function trackEffect(effect2, dep) {
 }
 function triggerEffects(dep) {
   for (let effect2 of dep.keys()) {
-    if (effect2.scheduler) {
+    if (effect2.scheduler && !effect2.isRunning) {
       effect2.scheduler();
     }
   }
@@ -111,6 +114,7 @@ function track(target, key) {
   trackEffect(activeEffect, dep);
 }
 function trigger(target, key, newValue, oldValue) {
+  console.log("targetMap", targetMap);
   let depsMap = targetMap.get(target);
   if (!depsMap) {
     console.log("\u627E\u4E0D\u5230depsMap");
@@ -128,7 +132,11 @@ var mutableHandlers = {
   get(target, key, receiver) {
     if (key === "__v_isReactive" /* IS_REACTIVE */) return true;
     track(target, key);
-    return Reflect.get(target, key, receiver);
+    let result = Reflect.get(target, key, receiver);
+    if (isObject(result)) {
+      result = reactive(result);
+    }
+    return result;
   },
   set(target, key, value, receiver) {
     let oldValue = target[key];

@@ -45,6 +45,7 @@ class ReactiveEffect {
   _trackId = 0;
   deps: Dep[] = [];
   _depsLength = 0;
+  isRunning = false;
   public active = true;
   // 如果fn中使用的响应式数据变化了，要重新调用 run 方法
   constructor(
@@ -62,10 +63,12 @@ class ReactiveEffect {
     let lastEffect = activeEffect;
     try {
       activeEffect = this;
+      this.isRunning = true;
       return this.fn();
     } finally {
       postCleanEffect(this);
       activeEffect = lastEffect;
+      this.isRunning = false;
     }
   }
 }
@@ -102,7 +105,7 @@ export function trackEffect(effect: ReactiveEffect, dep: Dep) {
 
 export function triggerEffects(dep: Map<ReactiveEffect, number>) {
   for (let effect of dep.keys()) {
-    if (effect.scheduler) {
+    if (effect.scheduler && !effect.isRunning) {
       effect.scheduler();
     }
   }
