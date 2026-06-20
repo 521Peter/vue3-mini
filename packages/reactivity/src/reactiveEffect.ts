@@ -31,7 +31,7 @@ export function track(target, key) {
   // 收集effect
   trackEffect(activeEffect, dep);
 
-  console.log(targetMap);
+  // console.log(targetMap);
 }
 
 // Map:{obj:{属性:Map:{effect,effect...}}}

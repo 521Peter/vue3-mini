@@ -17,18 +17,35 @@
     <script type="module">
       // import { reactive, effect } from "vue";
       import { reactive, effect } from "./reactivity.js";
-      let obj = { name: "张三", age: 18 };
+      let obj = { name: "张三", age: 18, flag: true };
 
       const state = reactive(obj);
 
-      effect(() => {
-        document.querySelector("#app").innerHTML =
-          `name = ${state.name},age = ${state.age}`;
-      });
+      let runner = effect(
+        () => {
+          console.log("running");
+
+          document.querySelector("#app").innerHTML = state.flag
+            ? state.name
+            : state.age;
+        },
+        {
+          scheduler: () => {
+            console.log("数据更新了，不重新渲染，走自己的逻辑");
+            console.log("runner", runner.effect);
+            runner();
+          },
+        },
+      );
 
       setTimeout(() => {
-        state.age++;
+        state.flag = false;
       }, 1000);
+
+      // effect(() => {
+      //   document.querySelector("#app").innerHTML =
+      //     state.flag + state.flag + state.flag;
+      // });
     </script>
   </body>
 </html>

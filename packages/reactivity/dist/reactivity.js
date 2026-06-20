@@ -4,38 +4,79 @@ function effect(fn, options) {
     console.error("\u4F20\u5165\u7684\u4E0D\u662F\u51FD\u6570");
     return fn;
   }
-  const _effect = new ReactiveEffect(fn);
+  const _effect = new ReactiveEffect(fn, () => {
+    _effect.run();
+  });
   _effect.run();
-  return _effect;
+  if (options) {
+    Object.assign(_effect, options);
+  }
+  const runner = _effect.run.bind(_effect);
+  runner.effect = _effect;
+  return runner;
+}
+function preCleanEffect(effect2) {
+  effect2._trackId++;
+  effect2._depsLength = 0;
+}
+function postCleanEffect(effect2) {
+  if (effect2.deps.length > effect2._depsLength) {
+    for (let i = effect2._depsLength; i < effect2.deps.length; i++) {
+      cleanDepEffect(effect2.deps[i], effect2);
+    }
+    effect2.deps.length = effect2._depsLength;
+  }
 }
 var activeEffect;
 var ReactiveEffect = class {
   // 如果fn中使用的响应式数据变化了，要重新调用 run 方法
-  constructor(fn) {
+  constructor(fn, scheduler) {
     this.fn = fn;
+    this.scheduler = scheduler;
     // 记录当前effect执行了多少次
     this._trackId = 0;
     this.deps = [];
+    this._depsLength = 0;
     this.active = true;
   }
   run() {
     if (!this.active) return this.fn();
+    preCleanEffect(this);
     let lastEffect = activeEffect;
     try {
       activeEffect = this;
       return this.fn();
     } finally {
+      postCleanEffect(this);
       activeEffect = lastEffect;
     }
   }
 };
+function cleanDepEffect(dep, effect2) {
+  dep.delete(effect2);
+  if (dep.size === 0) {
+    dep.cleanup();
+  }
+}
 function trackEffect(effect2, dep) {
-  dep.set(effect2, effect2._trackId);
-  effect2.deps.push(dep);
+  if (dep.get(effect2) !== effect2._trackId) {
+    dep.set(effect2, effect2._trackId);
+    let oldDep = effect2.deps[effect2._depsLength];
+    if (oldDep === dep) {
+      effect2._depsLength++;
+    } else {
+      if (oldDep) {
+        cleanDepEffect(oldDep, effect2);
+      }
+      effect2.deps[effect2._depsLength++] = dep;
+    }
+  }
 }
 function triggerEffects(dep) {
   for (let effect2 of dep.keys()) {
-    effect2.run();
+    if (effect2.scheduler) {
+      effect2.scheduler();
+    }
   }
 }
 
@@ -68,7 +109,6 @@ function track(target, key) {
     );
   }
   trackEffect(activeEffect, dep);
-  console.log(targetMap);
 }
 function trigger(target, key, newValue, oldValue) {
   let depsMap = targetMap.get(target);
