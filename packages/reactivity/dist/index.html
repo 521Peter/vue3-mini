@@ -15,13 +15,23 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      // import { reactive, effect, ref, toRef, toRefs } from "vue";
-      import { reactive, effect, ref, toRef, toRefs } from "./reactivity.js";
+      // import { reactive, effect, ref, toRef, toRefs, proxyRefs } from "vue";
+      import {
+        reactive,
+        effect,
+        ref,
+        toRef,
+        toRefs,
+        proxyRefs,
+      } from "./reactivity.js";
 
       let state = reactive({ name: "jw", age: 30 });
-      let { name, age } = toRefs(state);
-      console.log("name", name);
-      console.log("age", age);
+      let proxy = proxyRefs({ ...toRefs(state), address: "广州" });
+      proxy.age = 99;
+      console.log("name", proxy.name);
+      console.log("age", proxy.age);
+      console.log("address", proxy.address);
+      console.log("proxy", proxy);
 
       effect(() => {});
 

@@ -72,3 +72,22 @@ export function toRefs(obj) {
   }
   return result;
 }
+
+export function proxyRefs(obj) {
+  return new Proxy(obj, {
+    get(target, key, receiver) {
+      let r = Reflect.get(target, key, receiver);
+      // 自动脱ref
+      return r.__v_isRef ? r.value : r;
+    },
+    set(target, key, newValue, receiver) {
+      let oldValue = target[key];
+      if (oldValue.__v_isRef) {
+        oldValue.value = newValue;
+        return true;
+      } else {
+        return Reflect.set(target, key, newValue, receiver);
+      }
+    },
+  });
+}
