@@ -15,44 +15,19 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      // import { reactive, effect } from "vue";
-      import { reactive, effect } from "./reactivity.js";
-      let obj = { name: "张三", age: 18, flag: true, address: { n: 1 } };
+      // import { reactive, effect, ref } from "vue";
+      import { reactive, effect, ref } from "./reactivity.js";
 
-      const state = reactive(obj);
-
-      // let runner = effect(
-      //   () => {
-      //     console.log("running");
-
-      //     document.querySelector("#app").innerHTML = state.flag
-      //       ? state.name
-      //       : state.age;
-      //   },
-      //   {
-      //     scheduler: () => {
-      //       console.log("数据更新了，不重新渲染，走自己的逻辑");
-      //       console.log("runner", runner.effect);
-      //       runner();
-      //     },
-      //   },
-      // );
-
-      // setTimeout(() => {
-      //   state.flag = false;
-      // }, 1000);
-
-      // effect(() => {
-      //   document.querySelector("#app").innerHTML =
-      //     state.flag + state.flag + state.flag;
-      // });
+      const flag = ref(true);
+      console.log("flag", flag);
+      console.log("flag.value", flag.value);
 
       effect(() => {
-        document.querySelector("#app").innerHTML = state.address.n;
+        document.querySelector("#app").innerHTML = flag.value ? "sdf" : 18;
       });
 
       setTimeout(() => {
-        state.address.n = 999;
+        flag.value = false;
       }, 1000);
     </script>
   </body>

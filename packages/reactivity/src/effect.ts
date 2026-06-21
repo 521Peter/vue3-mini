@@ -1,4 +1,4 @@
-type Dep = Map<ReactiveEffect, number>;
+export type Dep = Map<ReactiveEffect, number>;
 
 export function effect(fn: Function, options?) {
   if (typeof fn !== "function") {

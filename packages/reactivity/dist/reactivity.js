@@ -162,10 +162,55 @@ function createReactiveObj(target) {
   reactiveMap.set(target, proxy);
   return proxy;
 }
+function toReactive(obj) {
+  return isObject(obj) ? reactive(obj) : obj;
+}
+
+// packages/reactivity/src/ref.ts
+function ref(value) {
+  return createRef(value);
+}
+function createRef(value) {
+  return new RefImpl(value);
+}
+var RefImpl = class {
+  constructor(rawValue) {
+    this.rawValue = rawValue;
+    // 用来保存ref中的值
+    this.__v_isRef = true;
+    this._value = toReactive(rawValue);
+  }
+  get value() {
+    trackRefEffect(this);
+    return this._value;
+  }
+  set value(newValue) {
+    if (this.value !== newValue) {
+      this._value = newValue;
+      this.rawValue = newValue;
+      triggerRefEffect(this);
+    }
+  }
+};
+function trackRefEffect(ref2) {
+  if (!activeEffect) return;
+  if (!ref2.dep) {
+    ref2.dep = createDep(() => {
+      ref2.dep = null;
+    }, "null");
+  }
+  trackEffect(activeEffect, ref2.dep);
+}
+function triggerRefEffect(ref2) {
+  if (!ref2.dep) return;
+  triggerEffects(ref2.dep);
+}
 export {
   activeEffect,
   effect,
   reactive,
+  ref,
+  toReactive,
   trackEffect,
   triggerEffects
 };

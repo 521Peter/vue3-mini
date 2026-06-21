@@ -3,7 +3,7 @@ import { activeEffect, trackEffect, triggerEffects } from "./effect";
 const targetMap = new WeakMap();
 
 // 创建map，并且给map添加名字和清除自身的方法
-function createDep(cleanup, name) {
+export function createDep(cleanup: Function, name: string) {
   let dep = new Map() as any;
   dep.cleanup = cleanup;
   dep.name = name;
