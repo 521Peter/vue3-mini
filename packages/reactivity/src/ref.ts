@@ -45,3 +45,30 @@ function triggerRefEffect(ref: RefImpl) {
 
   triggerEffects(ref.dep);
 }
+
+export function toRef(obj, key: string) {
+  return new ObjectRefImpl(obj, key);
+}
+
+class ObjectRefImpl {
+  public __v_isRef = true;
+  constructor(
+    public _object,
+    public _key,
+  ) {}
+
+  get value() {
+    return this._object[this._key];
+  }
+  set value(newValue) {
+    this._object[this._key] = newValue;
+  }
+}
+
+export function toRefs(obj) {
+  let result = {};
+  for (let key in obj) {
+    result[key] = toRef(obj, key);
+  }
+  return result;
+}

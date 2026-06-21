@@ -15,20 +15,17 @@
   <body>
     <div id="app"></div>
     <script type="module">
-      // import { reactive, effect, ref } from "vue";
-      import { reactive, effect, ref } from "./reactivity.js";
+      // import { reactive, effect, ref, toRef, toRefs } from "vue";
+      import { reactive, effect, ref, toRef, toRefs } from "./reactivity.js";
 
-      const flag = ref(true);
-      console.log("flag", flag);
-      console.log("flag.value", flag.value);
+      let state = reactive({ name: "jw", age: 30 });
+      let { name, age } = toRefs(state);
+      console.log("name", name);
+      console.log("age", age);
 
-      effect(() => {
-        document.querySelector("#app").innerHTML = flag.value ? "sdf" : 18;
-      });
+      effect(() => {});
 
-      setTimeout(() => {
-        flag.value = false;
-      }, 1000);
+      setTimeout(() => {}, 1000);
     </script>
   </body>
 </html>
