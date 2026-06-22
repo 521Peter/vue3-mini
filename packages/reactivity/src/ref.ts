@@ -18,19 +18,19 @@ class RefImpl {
     this._value = toReactive(rawValue);
   }
   get value() {
-    trackRefEffect(this);
+    trackRefValue(this);
     return this._value;
   }
   set value(newValue) {
     if (this.value !== newValue) {
       this._value = newValue;
       this.rawValue = newValue;
-      triggerRefEffect(this);
+      triggerRefValue(this);
     }
   }
 }
 
-function trackRefEffect(ref: RefImpl) {
+export function trackRefValue(ref) {
   if (!activeEffect) return;
   if (!ref.dep) {
     ref.dep = createDep(() => {
@@ -40,7 +40,7 @@ function trackRefEffect(ref: RefImpl) {
   trackEffect(activeEffect, ref.dep);
 }
 
-function triggerRefEffect(ref: RefImpl) {
+export function triggerRefValue(ref) {
   if (!ref.dep) return;
 
   triggerEffects(ref.dep);

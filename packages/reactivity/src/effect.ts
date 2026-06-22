@@ -1,3 +1,5 @@
+import { DirtyLevel } from "./constants";
+
 export type Dep = Map<ReactiveEffect, number>;
 
 export function effect(fn: Function, options?) {
@@ -40,12 +42,13 @@ function postCleanEffect(effect: ReactiveEffect) {
 
 // 当前运行的effect实例
 export let activeEffect: undefined | ReactiveEffect;
-class ReactiveEffect {
+export class ReactiveEffect {
   // 记录当前effect执行了多少次
   _trackId = 0;
   deps: Dep[] = [];
   _depsLength = 0;
   isRunning = false;
+  _dirtyLevel = DirtyLevel.DIRTY;
   public active = true;
   // 如果fn中使用的响应式数据变化了，要重新调用 run 方法
   constructor(
@@ -53,10 +56,19 @@ class ReactiveEffect {
     public scheduler: Function,
   ) {}
 
+  public get dirty() {
+    return this._dirtyLevel === DirtyLevel.DIRTY;
+  }
+
+  public set dirty(v) {
+    this._dirtyLevel = v ? DirtyLevel.DIRTY : DirtyLevel.NO_DIRTY;
+  }
+
   run() {
     // 如果不是响应式，执行完直接返回
     if (!this.active) return this.fn();
 
+    this._dirtyLevel = DirtyLevel.NO_DIRTY;
     preCleanEffect(this);
 
     // 记录父effect，解决effect嵌套引发的bug
