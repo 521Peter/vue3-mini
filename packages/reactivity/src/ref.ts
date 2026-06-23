@@ -10,7 +10,7 @@ function createRef(value) {
   return new RefImpl(value);
 }
 
-class RefImpl {
+export class RefImpl {
   public _value; // 用来保存ref中的值
   public __v_isRef = true; // ref标识
   public dep: Dep;
