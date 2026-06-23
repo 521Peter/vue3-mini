@@ -22,7 +22,14 @@ function doWatch(
   { deep, immediate } = { deep: true, immediate: false },
 ) {
   let oldValue;
-  let getter;
+  let getter: Function;
+  let clean;
+  let onCleanup = (fn: Function) => {
+    clean = () => {
+      fn();
+      clean = undefined;
+    };
+  };
   if (isReactive(source)) {
     getter = () => traverse(source, deep ? undefined : 1);
   } else if (isRef(source)) {
@@ -33,7 +40,10 @@ function doWatch(
   const job = () => {
     if (cb) {
       let newValue = effect.run();
-      cb(newValue, oldValue);
+      // 如果传入的清理函数，则在下一次回调执行前，先执行下清理函数
+      debugger;
+      clean && clean();
+      cb(newValue, oldValue, onCleanup);
       oldValue = newValue;
     } else {
       effect.run();
