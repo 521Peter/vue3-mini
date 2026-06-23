@@ -3,16 +3,28 @@ import { ReactiveEffect } from "./effect";
 import { isRef, RefImpl } from "./ref";
 import { isReactive } from "vue";
 
-interface Options {
+interface WatchOpt {
   deep: boolean;
   immediate: boolean;
 }
 
-export function watch(source, cb: Function, options: Options) {
+interface WatchEffectOpt {
+  flush: boolean;
+}
+
+export function watch(source, cb: Function, options?: WatchOpt) {
   doWatch(source, cb, options);
 }
 
-function doWatch(source, cb: Function, { deep, immediate }: Options) {
+export function watchEffect(source, options) {
+  doWatch(source, null, options);
+}
+
+function doWatch(
+  source,
+  cb: Function,
+  { deep, immediate } = { deep: true, immediate: false },
+) {
   let oldValue;
   let getter;
   if (isReactive(source)) {
@@ -23,19 +35,26 @@ function doWatch(source, cb: Function, { deep, immediate }: Options) {
     getter = source;
   }
   const job = () => {
-    let newValue = effect.run();
-    cb(newValue, oldValue);
-    oldValue = newValue;
+    if (cb) {
+      let newValue = effect.run();
+      cb(newValue, oldValue);
+      oldValue = newValue;
+    } else {
+      effect.run();
+    }
   };
-  // 遍历源数据，手动触发依赖绑定
   const effect = new ReactiveEffect(getter, job);
 
+  // 访问源数据，触发依赖绑定
   if (cb) {
     if (immediate) {
       job();
     } else {
       oldValue = effect.run();
     }
+  } else {
+    // 没有cb,则认为是watchEffect
+    effect.run();
   }
 }
 
