@@ -29,3 +29,7 @@ function createReactiveObj(target) {
 export function toReactive(obj) {
   return isObject(obj) ? reactive(obj) : obj;
 }
+
+export function isReactive(obj) {
+  return obj instanceof Proxy && obj[ReactiveFlags.IS_REACTIVE];
+}

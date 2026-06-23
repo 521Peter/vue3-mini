@@ -91,3 +91,7 @@ export function proxyRefs(obj) {
     },
   });
 }
+
+export function isRef(obj) {
+  return obj instanceof RefImpl && obj["__v_isRef"];
+}

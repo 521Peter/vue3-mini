@@ -1,40 +1,51 @@
-import { isObject } from "@vue/shared";
+import { isFunction, isObject } from "@vue/shared";
 import { ReactiveEffect } from "./effect";
-import { RefImpl } from "./ref";
+import { isRef, RefImpl } from "./ref";
+import { isReactive } from "vue";
 
 interface Options {
   deep: boolean;
+  immediate: boolean;
 }
 
 export function watch(source, cb: Function, options: Options) {
   doWatch(source, cb, options);
 }
 
-function doWatch(source, cb: Function, { deep }: Options) {
+function doWatch(source, cb: Function, { deep, immediate }: Options) {
   let oldValue;
+  let getter;
+  if (isReactive(source)) {
+    getter = () => traverse(source, deep ? undefined : 1);
+  } else if (isRef(source)) {
+    getter = () => source.value;
+  } else if (isFunction(source)) {
+    getter = source;
+  }
   const job = () => {
     let newValue = effect.run();
     cb(newValue, oldValue);
     oldValue = newValue;
   };
   // 遍历源数据，手动触发依赖绑定
-  const effect = new ReactiveEffect(
-    () => traverse(source, deep ? undefined : 1),
-    job,
-  );
-  oldValue = effect.run();
+  const effect = new ReactiveEffect(getter, job);
+
+  if (cb) {
+    if (immediate) {
+      job();
+    } else {
+      oldValue = effect.run();
+    }
+  }
 }
 
 // 递归遍历 seen的作用：防止对象循环引用
 function traverse(
-  source: RefImpl | ProxyConstructor,
+  source: ProxyConstructor,
   depth: number | undefined,
   curDepth = 0,
   seen = new Set(),
 ) {
-  if (source instanceof RefImpl) {
-    return source.value;
-  }
   if (!isObject(source)) {
     return source;
   }
