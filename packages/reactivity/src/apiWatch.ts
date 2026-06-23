@@ -3,21 +3,17 @@ import { ReactiveEffect } from "./effect";
 import { isRef, RefImpl } from "./ref";
 import { isReactive } from "vue";
 
-interface WatchOpt {
+interface Options {
   deep: boolean;
   immediate: boolean;
 }
 
-interface WatchEffectOpt {
-  flush: boolean;
-}
-
-export function watch(source, cb: Function, options?: WatchOpt) {
-  doWatch(source, cb, options);
+export function watch(source, cb: Function, options?: Options) {
+  return doWatch(source, cb, options);
 }
 
 export function watchEffect(source, options) {
-  doWatch(source, null, options);
+  return doWatch(source, null, options);
 }
 
 function doWatch(
@@ -56,6 +52,10 @@ function doWatch(
     // 没有cb,则认为是watchEffect
     effect.run();
   }
+
+  return () => {
+    effect.stop();
+  };
 }
 
 // 递归遍历 seen的作用：防止对象循环引用
