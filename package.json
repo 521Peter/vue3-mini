@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node srcipts/dev.js reactivity -f esm"
+    "dev": "node srcipts/dev.js runtime-dom -f esm"
   },
   "keywords": [],
   "author": "",
