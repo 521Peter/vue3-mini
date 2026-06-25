@@ -1,3 +1,5 @@
+import { ShapeFlags } from "@vue/shared";
+
 interface RenderOptions {
   insert(el: Element, parent: Element, anchor?: Element): void;
   remove(el: Element): void;
@@ -23,11 +25,24 @@ export function createRender(renderOptions: RenderOptions) {
     patchProp: hostPatchProp,
   } = renderOptions;
 
+  const mountChildren = (children: Array<any>, container: HTMLElement) => {
+    for (let ch of children) {
+      patch(null, ch, container);
+    }
+  };
+
   // 将虚拟节点挂载到真实dom上
   const mountElement = (vnode, container: HTMLElement) => {
-    const { type, props, children } = vnode;
+    const { type, props, children, shapeFlag } = vnode;
     const ele = hostCreateElement(type);
-    hostSetElementText(ele, children);
+    // 按位&运算
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // 如果children是普通文本
+      hostSetElementText(ele, children);
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      // 如果children是数组
+      mountChildren(children, ele);
+    }
     for (let k in props) {
       hostPatchProp(ele, k, null, props[k]);
     }
