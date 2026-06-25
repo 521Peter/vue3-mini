@@ -8,7 +8,7 @@ function createCallback(invoker, newValue) {
 // onClick = ()=>{}
 export default function patchEvent(
   el: HTMLElement & Partial<{ _vei: Object }>,
-  name,
+  name: string,
   nextValue,
 ) {
   const eventName = name.slice(2).toLowerCase();
