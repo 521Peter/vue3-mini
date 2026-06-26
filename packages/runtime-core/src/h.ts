@@ -1,5 +1,5 @@
 import { isArray, isObject } from "@vue/shared";
-import { createVnode } from "./createVnode";
+import { createVnode, isVNode } from "./createVnode";
 
 export function h(type, propsOrChildren, children) {
   const l = arguments.length;
@@ -25,8 +25,4 @@ export function h(type, propsOrChildren, children) {
 
     return createVnode(type, propsOrChildren, children);
   }
-}
-
-export function isVNode(value) {
-  return value?.__v_isVNode === true;
 }

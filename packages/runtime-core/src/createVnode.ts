@@ -22,3 +22,12 @@ export function createVnode(type, props, children?) {
 
   return vnode;
 }
+
+export function isVNode(value) {
+  return value?.__v_isVNode === true;
+}
+
+// 这里的key用户可以传，不传就是undefined
+export function isSameVNode(v1, v2) {
+  return v1.type === v2.type && v1.key === v2.key;
+}

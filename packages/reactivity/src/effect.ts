@@ -47,6 +47,7 @@ export class ReactiveEffect {
   _trackId = 0;
   deps: Dep[] = [];
   _depsLength = 0;
+  // 解决effect中，收集了某个响应式变量的依赖，然后直接修改这个变量而导致的无限循环
   isRunning = false;
   _dirtyLevel = DirtyLevel.DIRTY;
   public active = true;
