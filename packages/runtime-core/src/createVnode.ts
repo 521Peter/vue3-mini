@@ -1,7 +1,17 @@
 import { isArray, isString, ShapeFlags } from "@vue/shared";
 
+export interface Vnode {
+  __v_isVNode: boolean;
+  type: string;
+  props: Record<string, any>;
+  key?: string | number;
+  children: null | Array<any> | string;
+  shapeFlag: number;
+  el?: HTMLElement;
+}
+
 // 必须传固定参数：props为属性；children为数组
-export function createVnode(type, props, children?) {
+export function createVnode(type, props, children?): Vnode {
   let shapeFlag = isString(type) ? ShapeFlags.ELEMENT : 0;
   let vnode = {
     __v_isVNode: true,
@@ -16,7 +26,7 @@ export function createVnode(type, props, children?) {
     vnode.children = children;
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.ARRAY_CHILDREN;
   } else {
-    vnode.children = String(children);
+    vnode.children = children ? String(children) : null;
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.TEXT_CHILDREN;
   }
 

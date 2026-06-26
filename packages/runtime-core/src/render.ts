@@ -1,5 +1,5 @@
 import { ShapeFlags } from "@vue/shared";
-import { isSameVNode } from "./createVnode";
+import { isSameVNode, Vnode } from "./createVnode";
 
 interface RenderOptions {
   insert(el: Element, parent: Element, anchor?: Element): void;
@@ -26,7 +26,7 @@ export function createRender(renderOptions: RenderOptions) {
     patchProp: hostPatchProp,
   } = renderOptions;
 
-  const mountChildren = (children: Array<any>, container: HTMLElement) => {
+  const mountChildren = (children, container: HTMLElement) => {
     for (let ch of children) {
       patch(null, ch, container);
     }
@@ -71,9 +71,54 @@ export function createRender(renderOptions: RenderOptions) {
     }
   };
 
-  const patchChildren = (el, n1, n2) => {};
+  const unmountChildren = (ch) => {
+    for (let c of ch) {
+      unmount(c);
+    }
+  };
 
-  const patchElement = (n1, n2) => {
+  const patchChildren = (n1: Vnode, n2: Vnode, el: HTMLElement) => {
+    // children可能是null、文本或者数组
+    let c1 = n1.children;
+    let c2 = n2.children;
+
+    let preShapeFlag = n1.shapeFlag;
+    let curShapeFlag = n2.shapeFlag;
+    // 一共9种情况，可以汇总成以下情况
+    //1.新的是文本，老的是数组移除老的：
+    //2.新的是文本，老的也是文本，内容不相同替换
+    //3.老的是数组，新的是数组，diff 算法
+    //4.老的是数组，新的不是数组，移除老的子节点
+    //5.老的是文本，新的是空
+    //6.老的是文本，新的是数组
+
+    if (curShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      if (preShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        unmountChildren(c1);
+      }
+      if (c1 != c2) {
+        hostSetElementText(el, c2);
+      }
+    } else {
+      if (preShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        if (curShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // 子节点都是数组，diff算法比较，复用节点
+        } else {
+          unmountChildren(c1);
+        }
+      } else {
+        if (preShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+          hostSetElementText(el, "");
+        }
+
+        if (curShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          mountChildren(c2, el);
+        }
+      }
+    }
+  };
+
+  const patchElement = (n1, n2, container) => {
     // 复用dom
     const el = (n2.el = n1.el);
 
@@ -90,7 +135,7 @@ export function createRender(renderOptions: RenderOptions) {
       mountElement(n2, container);
     } else {
       // 相同虚拟节点，需要比较元素的属性、children...
-      patchElement(n1, n2);
+      patchElement(n1, n2, container);
     }
   };
 
