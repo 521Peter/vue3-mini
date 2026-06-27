@@ -33,7 +33,7 @@ export function createRender(renderOptions: RenderOptions) {
   };
 
   // 将虚拟节点挂载到真实dom上
-  const mountElement = (vnode, container: HTMLElement) => {
+  const mountElement = (vnode, container: HTMLElement, anchor) => {
     const { type, props, children, shapeFlag } = vnode;
     const ele = hostCreateElement(type);
     vnode.el = ele;
@@ -49,7 +49,7 @@ export function createRender(renderOptions: RenderOptions) {
     for (let k in props) {
       hostPatchProp(ele, k, null, props[k]);
     }
-    hostInsert(ele, container);
+    hostInsert(ele, container, anchor);
   };
 
   const unmount = (vnode) => {
@@ -74,6 +74,119 @@ export function createRender(renderOptions: RenderOptions) {
   const unmountChildren = (ch) => {
     for (let c of ch) {
       unmount(c);
+    }
+  };
+
+  const patchKeyedChildren = (c1: Vnode[], c2: Vnode[], el: HTMLElement) => {
+    // 为了尽可能复用元素节点，会使用while循环分别从头部和尾部进行比对，记录当前遍历的索引
+    // 是相同的虚拟节点，则进行patch操作。否则跳出循环
+    let i = 0;
+    let e1 = c1.length - 1;
+    let e2 = c2.length - 1;
+    // 从头开始比
+    while (i <= e1 && i <= e2) {
+      let n1 = c1[i];
+      let n2 = c2[i];
+      if (isSameVNode(n1, n2)) {
+        patch(n1, n2, el);
+      } else {
+        break;
+      }
+      i++;
+    }
+    // console.log("i e1 e2", i, e1, e2);
+    // 从尾部开始比
+    while (i <= e1 && i <= e2) {
+      let n1 = c1[e1];
+      let n2 = c2[e2];
+      if (isSameVNode(n1, n2)) {
+        patch(n1, n2, el);
+      } else {
+        break;
+      }
+      e1--;
+      e2--;
+    }
+    // console.log("i e1 e2", i, e1, e2);
+
+    if (i > e1) {
+      // [a,b] => [a,b,c] 头循环 i e1 e2 2 1 2
+      // [a,b] => [c,a,b] 尾循环 i e1 e2 0 -1 0
+      // 规律：i > e1  i <= e2
+      // 新的多，增加操作
+      if (i <= e2) {
+        let nextPos = e2 + 1;
+        let anchor = c2[nextPos];
+        if (anchor?.el) {
+          while (i <= e2) {
+            // 在anchor前面插入元素
+            patch(null, c2[i], el, anchor.el);
+            i++;
+          }
+        } else {
+          let j = i;
+          while (j <= e2) {
+            // 直接向后插入元素
+            patch(null, c2[j], el);
+            j++;
+          }
+        }
+      }
+    } else if (i > e2) {
+      // [a,b,c] => [a,b] 头循环 i e1 e2 2 2 1
+      // [c,a,b] => [a,b] 尾循环 i e1 e2 0 0 -1
+      // 规律：i > e2  i <= e1
+      // 旧的多，删除操作
+      if (i <= e1) {
+        while (i <= e1) {
+          unmount(c1[i]);
+          i++;
+        }
+      }
+    } else {
+      console.log("i e1 e2", i, e1, e2);
+      let s1 = i;
+      let s2 = i;
+      // s1-e1部分 和 s2-e2部分 不一样
+      // 可以根据新的建立映射表
+      let keyToNewIndexMap: Map<Vnode["key"], number> = new Map();
+      for (let i = s2; i <= e2; i++) {
+        const vnode = c2[i];
+        keyToNewIndexMap.set(vnode.key, i);
+      }
+
+      // 遍历旧的部分，如果在映射表中没找到，就删除；找到就更新节点
+      for (let i = s1; i <= e1; i++) {
+        const vnode = c1[i];
+        const newIndex = keyToNewIndexMap.get(vnode.key);
+        if (newIndex === undefined) {
+          unmount(vnode);
+        } else {
+          // 比较前后节点的差异，更新属性和孩子
+          patch(vnode, c2[newIndex], el);
+        }
+      }
+
+      // 调整顺序
+      // 倒序比对每个元素，做插入操作
+      let len = e2 - s2 + 1;
+      console.log("len", len);
+
+      for (let i = len - 1; i >= 0; i--) {
+        let newIndex = s2 + i;
+        let vnode = c2[newIndex];
+        let anchor = c2[newIndex + 1].el;
+        // console.log("vnode.el", vnode.el);
+        // console.log("anchor", anchor);
+
+        if (!vnode.el) {
+          // 如果当前虚拟节点没有el元素，说明是新增的，需要添加到anchor的前面
+          patch(null, vnode, el, anchor);
+        } else {
+          // 调整元素位置，重新插入
+          hostInsert(vnode.el, el, anchor);
+        }
+      }
     }
   };
 
@@ -103,6 +216,7 @@ export function createRender(renderOptions: RenderOptions) {
       if (preShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         if (curShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           // 子节点都是数组，diff算法比较，复用节点
+          patchKeyedChildren(c1 as Array<Vnode>, c2 as Array<Vnode>, el);
         } else {
           unmountChildren(c1);
         }
@@ -129,17 +243,22 @@ export function createRender(renderOptions: RenderOptions) {
     patchChildren(n1, n2, el);
   };
 
-  const processElement = (n1, n2, container) => {
+  const processElement = (n1, n2, container, anchor) => {
     if (n1 === null) {
       // 如果n1为null，n2有值，需要将n2挂载到真实dom上
-      mountElement(n2, container);
+      mountElement(n2, container, anchor);
     } else {
       // 相同虚拟节点，需要比较元素的属性、children...
       patchElement(n1, n2, container);
     }
   };
 
-  const patch = (n1, n2, container) => {
+  const patch = (
+    n1: Vnode,
+    n2: Vnode,
+    container,
+    anchor: null | HTMLElement = null,
+  ) => {
     // 相同节点不做处理
     if (n1 === n2) return;
 
@@ -149,11 +268,11 @@ export function createRender(renderOptions: RenderOptions) {
       n1 = null;
     }
 
-    processElement(n1, n2, container);
+    processElement(n1, n2, container, anchor);
   };
 
   const render = (vnode, container) => {
-    console.log(container._vnode);
+    // console.log(container._vnode);
 
     // 如果vnode为空，而且这个容器挂载过虚拟节点，那么移出元素
     if (vnode === null) {

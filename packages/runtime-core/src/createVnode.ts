@@ -38,6 +38,6 @@ export function isVNode(value) {
 }
 
 // 这里的key用户可以传，不传就是undefined
-export function isSameVNode(v1, v2) {
+export function isSameVNode(v1: Vnode, v2: Vnode) {
   return v1.type === v2.type && v1.key === v2.key;
 }
