@@ -1,12 +1,17 @@
-import { isArray, isString, ShapeFlags } from "@vue/shared";
+import { isArray, isObject, isString, ShapeFlags } from "@vue/shared";
+
+export interface Component {
+  data: Function;
+  render: Function;
+}
 
 export interface Vnode {
   __v_isVNode: boolean;
-  type: string | symbol;
+  type: string | symbol | Component;
   props: Record<string, any>;
   key?: string | number;
   children: null | Array<any> | string;
-  shapeFlag: number;
+  shapeFlag: ShapeFlags;
   // el?: HTMLElement | Text;
   el?;
 }
@@ -17,7 +22,12 @@ export const Fragment = Symbol("Fragment");
 
 // 必须传固定参数：props为属性；children为数组
 export function createVnode(type, props, children?): Vnode {
-  let shapeFlag = isString(type) ? ShapeFlags.ELEMENT : 0;
+  // type为对象时，说明是组件类型
+  let shapeFlag = isString(type)
+    ? ShapeFlags.ELEMENT
+    : isObject(type)
+      ? ShapeFlags.STATEFUL_COMPONENT
+      : 0;
   let vnode = {
     __v_isVNode: true,
     type,

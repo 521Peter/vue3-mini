@@ -1,6 +1,7 @@
 import { ShapeFlags } from "@vue/shared";
-import { isSameVNode, Vnode, Text, Fragment } from "./createVnode";
+import { isSameVNode, Vnode, Text, Fragment, Component } from "./createVnode";
 import { getSequence } from "./seq";
+import { reactive, ReactiveEffect } from "@vue/reactivity";
 
 interface RenderOptions {
   insert(el: Element, parent: Element, anchor?: Element): void;
@@ -287,6 +288,45 @@ export function createRender(renderOptions: RenderOptions) {
     }
   };
 
+  const mountComponent = (n: Vnode, container) => {
+    const instance = {
+      isMounted: false,
+      subTree: null,
+      state: null,
+      update: null,
+    };
+
+    const { data, render } = n.type as Component;
+    // 将用到的数据变成响应式数据
+    const state = reactive(data());
+
+    const componentUpdateFn = () => {
+      let subTree = render.call(state, state);
+      if (instance.isMounted) {
+        patch(instance.subTree, subTree, container);
+      } else {
+        patch(null, subTree, container);
+      }
+      instance.subTree = subTree;
+      instance.isMounted = true;
+    };
+
+    const effect = new ReactiveEffect(componentUpdateFn, () => update());
+    const update = (instance.update = () => {
+      effect.run();
+    });
+    update();
+  };
+
+  const processComponent = (n1: Vnode, n2: Vnode, container, anchor) => {
+    if (n1 === null) {
+      // 挂载组件
+      mountComponent(n2, container);
+    } else {
+      // patchComponent(n1, n2, container);
+    }
+  };
+
   const patch = (
     n1: Vnode,
     n2: Vnode,
@@ -302,8 +342,7 @@ export function createRender(renderOptions: RenderOptions) {
       n1 = null;
     }
 
-    const { type } = n2;
-    debugger;
+    const { type, shapeFlag } = n2;
 
     switch (type) {
       case Text:
@@ -313,7 +352,12 @@ export function createRender(renderOptions: RenderOptions) {
         patchFragment(n1, n2, container);
         break;
       default:
-        processElement(n1, n2, container, anchor);
+        // debugger;
+        if (shapeFlag & ShapeFlags.ELEMENT) {
+          processElement(n1, n2, container, anchor);
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          processComponent(n1, n2, container, anchor);
+        }
     }
   };
 
