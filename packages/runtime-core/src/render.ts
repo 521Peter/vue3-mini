@@ -1,5 +1,5 @@
 import { ShapeFlags } from "@vue/shared";
-import { isSameVNode, Vnode } from "./createVnode";
+import { isSameVNode, Vnode, Text } from "./createVnode";
 import { getSequence } from "./seq";
 
 interface RenderOptions {
@@ -264,6 +264,17 @@ export function createRender(renderOptions: RenderOptions) {
     }
   };
 
+  const patchText = (n1: Vnode, n2: Vnode, container) => {
+    debugger;
+    if (n1 === null) {
+      n2.el = hostCreateText(n2.children);
+      hostInsert(n2.el, container);
+    } else {
+      let el = (n2.el = n1.el);
+      hostSetText(el, n2.children);
+    }
+  };
+
   const patch = (
     n1: Vnode,
     n2: Vnode,
@@ -279,7 +290,14 @@ export function createRender(renderOptions: RenderOptions) {
       n1 = null;
     }
 
-    processElement(n1, n2, container, anchor);
+    const { type } = n2;
+    switch (type) {
+      case Text:
+        patchText(n1, n2, container);
+        break;
+      default:
+        processElement(n1, n2, container, anchor);
+    }
   };
 
   const render = (vnode, container) => {
@@ -290,11 +308,12 @@ export function createRender(renderOptions: RenderOptions) {
       if (container._vnode) {
         unmount(container._vnode);
       }
+    } else {
+      // 将虚拟节点渲染成真实节点
+      patch(container._vnode || null, vnode, container);
+      // 保存当前的虚拟节点
+      container._vnode = vnode;
     }
-    // 将虚拟节点渲染成真实节点
-    patch(container._vnode || null, vnode, container);
-    // 保存当前的虚拟节点
-    container._vnode = vnode;
   };
 
   return {
