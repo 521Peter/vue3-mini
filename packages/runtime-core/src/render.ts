@@ -1,5 +1,6 @@
 import { ShapeFlags } from "@vue/shared";
 import { isSameVNode, Vnode } from "./createVnode";
+import { getSequence } from "./seq";
 
 interface RenderOptions {
   insert(el: Element, parent: Element, anchor?: Element): void;
@@ -150,6 +151,8 @@ export function createRender(renderOptions: RenderOptions) {
       // s1-e1部分 和 s2-e2部分 不一样
       // 可以根据新的建立映射表
       let keyToNewIndexMap: Map<Vnode["key"], number> = new Map();
+      let len = e2 - s2 + 1;
+      let newIndexToOldIndex = new Array(len).fill(0);
       for (let i = s2; i <= e2; i++) {
         const vnode = c2[i];
         keyToNewIndexMap.set(vnode.key, i);
@@ -162,16 +165,19 @@ export function createRender(renderOptions: RenderOptions) {
         if (newIndex === undefined) {
           unmount(vnode);
         } else {
+          newIndexToOldIndex[newIndex - s2] = i + 1;
           // 比较前后节点的差异，更新属性和孩子
           patch(vnode, c2[newIndex], el);
         }
       }
+      // console.log("keyToNewIndexMap", keyToNewIndexMap);
+      let increasingSeq = getSequence(newIndexToOldIndex);
+      // console.log("increasingSeq", increasingSeq);
+      // console.log("newIndexToOldIndex", newIndexToOldIndex);
 
       // 调整顺序
       // 倒序比对每个元素，做插入操作
-      let len = e2 - s2 + 1;
-      console.log("len", len);
-
+      let j = increasingSeq.length - 1;
       for (let i = len - 1; i >= 0; i--) {
         let newIndex = s2 + i;
         let vnode = c2[newIndex];
@@ -183,8 +189,13 @@ export function createRender(renderOptions: RenderOptions) {
           // 如果当前虚拟节点没有el元素，说明是新增的，需要添加到anchor的前面
           patch(null, vnode, el, anchor);
         } else {
-          // 调整元素位置，重新插入
-          hostInsert(vnode.el, el, anchor);
+          // diff算法优化：顺序对的元素不做调整
+          if (i === increasingSeq[j]) {
+            j--;
+          } else {
+            // 调整元素位置，重新插入
+            hostInsert(vnode.el, el, anchor);
+          }
         }
       }
     }
