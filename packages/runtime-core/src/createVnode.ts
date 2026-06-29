@@ -12,6 +12,8 @@ export interface Vnode {
 }
 
 export const Text = Symbol("Text");
+// children都是数组
+export const Fragment = Symbol("Fragment");
 
 // 必须传固定参数：props为属性；children为数组
 export function createVnode(type, props, children?): Vnode {

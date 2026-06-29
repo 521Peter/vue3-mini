@@ -1,5 +1,5 @@
 import { ShapeFlags } from "@vue/shared";
-import { isSameVNode, Vnode, Text } from "./createVnode";
+import { isSameVNode, Vnode, Text, Fragment } from "./createVnode";
 import { getSequence } from "./seq";
 
 interface RenderOptions {
@@ -53,8 +53,13 @@ export function createRender(renderOptions: RenderOptions) {
     hostInsert(ele, container, anchor);
   };
 
-  const unmount = (vnode) => {
-    hostRemove(vnode.el);
+  const unmount = (vnode: Vnode) => {
+    const { type } = vnode;
+    if (type === Fragment) {
+      unmountChildren(vnode.children);
+    } else {
+      hostRemove(vnode.el);
+    }
   };
 
   const patchProps = (n1, n2, el: HTMLElement) => {
@@ -265,13 +270,20 @@ export function createRender(renderOptions: RenderOptions) {
   };
 
   const patchText = (n1: Vnode, n2: Vnode, container) => {
-    debugger;
     if (n1 === null) {
       n2.el = hostCreateText(n2.children);
       hostInsert(n2.el, container);
     } else {
       let el = (n2.el = n1.el);
       hostSetText(el, n2.children);
+    }
+  };
+
+  const patchFragment = (n1: Vnode, n2: Vnode, container) => {
+    if (n1 === null) {
+      mountChildren(n2.children, container);
+    } else {
+      patchChildren(n1, n2, container);
     }
   };
 
@@ -291,9 +303,14 @@ export function createRender(renderOptions: RenderOptions) {
     }
 
     const { type } = n2;
+    debugger;
+
     switch (type) {
       case Text:
         patchText(n1, n2, container);
+        break;
+      case Fragment:
+        patchFragment(n1, n2, container);
         break;
       default:
         processElement(n1, n2, container, anchor);

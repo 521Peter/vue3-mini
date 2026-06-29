@@ -22,5 +22,3 @@ export function getSequence(arr: any[]) {
   }
   return result;
 }
-
-console.log(getSequence([4, 5, 1, 2, 2, 7, 3, 6, 9]));
