@@ -1,19 +1,32 @@
 import { isArray, isObject, isString, ShapeFlags } from "@vue/shared";
 
-export interface Component {
+export interface ComponentType {
   data: Function;
   render: Function;
+  props: Record<string, any>;
+}
+
+export interface ComponentInstance {
+  isMounted: Boolean;
+  subTree: Vnode;
+  state: any;
+  update: Function;
+  propsOptions: Record<string | symbol, any>;
+  props: Record<string | symbol, any>;
+  attrs: Record<string | symbol, any>;
+  proxy: ProxyConstructor;
 }
 
 export interface Vnode {
   __v_isVNode: boolean;
-  type: string | symbol | Component;
+  type: string | symbol | ComponentType;
   props: Record<string, any>;
   key?: string | number;
   children: null | Array<any> | string;
   shapeFlag: ShapeFlags;
   // el?: HTMLElement | Text;
   el?;
+  component?: ComponentInstance;
 }
 
 export const Text = Symbol("Text");

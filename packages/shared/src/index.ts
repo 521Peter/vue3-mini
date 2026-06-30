@@ -16,4 +16,8 @@ export function isString(value) {
   return typeof value === "string";
 }
 
+export function hasOwn(value, key) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
 export { ShapeFlags };
