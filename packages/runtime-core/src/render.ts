@@ -2,6 +2,7 @@ import { ShapeFlags } from "@vue/shared";
 import { isSameVNode, Vnode, Text, Fragment, Component } from "./createVnode";
 import { getSequence } from "./seq";
 import { reactive, ReactiveEffect } from "@vue/reactivity";
+import { queueJob } from "./scheduler";
 
 interface RenderOptions {
   insert(el: Element, parent: Element, anchor?: Element): void;
@@ -311,7 +312,9 @@ export function createRender(renderOptions: RenderOptions) {
       instance.isMounted = true;
     };
 
-    const effect = new ReactiveEffect(componentUpdateFn, () => update());
+    const effect = new ReactiveEffect(componentUpdateFn, () =>
+      queueJob(update),
+    );
     const update = (instance.update = () => {
       effect.run();
     });

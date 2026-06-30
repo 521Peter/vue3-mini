@@ -55,13 +55,13 @@ vue3.4/
 
 ### 1. 响应式系统
 
-| API | 实现要点 |
-|-----|---------|
-| `reactive()` | Proxy 代理 + WeakMap 缓存；`IS_REACTIVE` 标记防重复代理 |
-| `effect()` | `ReactiveEffect` 类封装，支持 `_trackId` 依赖去重、嵌套 effect（父子栈）、`scheduler` 调度 |
-| `ref()` | `RefImpl` 类包装，`ObjectRefImpl` 实现 `toRef`/`toRefs`，`proxyRefs` 自动脱 ref |
-| `computed()` | `ComputedRefImpl` 懒计算 + `DirtyLevel` 脏检查缓存 |
-| `watch()` / `watchEffect()` | `traverse()` 递归深度监听，`onCleanup` 竞态清理，支持 `immediate`/`deep` 选项 |
+| API                         | 实现要点                                                                                   |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| `reactive()`                | Proxy 代理 + WeakMap 缓存；`IS_REACTIVE` 标记防重复代理                                    |
+| `effect()`                  | `ReactiveEffect` 类封装，支持 `_trackId` 依赖去重、嵌套 effect（父子栈）、`scheduler` 调度 |
+| `ref()`                     | `RefImpl` 类包装，`ObjectRefImpl` 实现 `toRef`/`toRefs`，`proxyRefs` 自动脱 ref            |
+| `computed()`                | `ComputedRefImpl` 懒计算 + `DirtyLevel` 脏检查缓存                                         |
+| `watch()` / `watchEffect()` | `traverse()` 递归深度监听，`onCleanup` 竞态清理，支持 `immediate`/`deep` 选项              |
 
 ### 2. 虚拟 DOM & 渲染器
 
@@ -89,32 +89,32 @@ vue3.4/
 
 ```typescript
 const instance = {
-  state: reactive(data()),     // 响应式数据
-  render: render,              // 渲染函数
-  update: effect.run,          // 更新触发
-}
+  state: reactive(data()), // 响应式数据
+  render: render, // 渲染函数
+  update: effect.run, // 更新触发
+};
 // ReactiveEffect 驱动：state 变化 → scheduler → update() → patch
 ```
 
 ## 开发历程
 
-| Commit | 内容 |
-|--------|------|
-| `feat: 实现reactive` | Proxy 响应式代理 + 深层代理 |
-| `feat: 收集依赖和触发依赖` | track / trigger 依赖系统 |
-| `feat: effect调度实现` | scheduler 调度机制 |
-| `feat: 实现ref` | ref / toRef / toRefs / proxyRefs |
-| `feat: 添加计算属性` | computed 懒计算 + 脏检查 |
-| `feat: 添加watch` | watch / watchEffect / onCleanup |
-| `feat: 位运算判断元素形状` | ShapeFlags 位运算设计 |
-| `feat: 实现h函数创建虚拟节点` | h() 函数 + VNode 创建 |
-| `feat: 两个元素之间的比较` | patchElement + patchProps |
-| `feat: 子节点比较策略` | patchChildren 9 种场景处理 |
-| `feat: diff算法` | 双端对比 + Key 映射 |
-| `feat: diff算法优化` | LIS 最长递增子序列优化 |
-| `feat: Text节点渲染` | Text 类型 VNode 渲染 |
-| `feat: Fragment节点渲染` | Fragment 类型 VNode 渲染 |
-| `feat: vue组件渲染` | 组件挂载 + 响应式更新 |
+| Commit                        | 内容                             |
+| ----------------------------- | -------------------------------- |
+| `feat: 实现reactive`          | Proxy 响应式代理 + 深层代理      |
+| `feat: 收集依赖和触发依赖`    | track / trigger 依赖系统         |
+| `feat: effect调度实现`        | scheduler 调度机制               |
+| `feat: 实现ref`               | ref / toRef / toRefs / proxyRefs |
+| `feat: 添加计算属性`          | computed 懒计算 + 脏检查         |
+| `feat: 添加watch`             | watch / watchEffect / onCleanup  |
+| `feat: 位运算判断元素形状`    | ShapeFlags 位运算设计            |
+| `feat: 实现h函数创建虚拟节点` | h() 函数 + VNode 创建            |
+| `feat: 两个元素之间的比较`    | patchElement + patchProps        |
+| `feat: 子节点比较策略`        | patchChildren 9 种场景处理       |
+| `feat: diff算法`              | 双端对比 + Key 映射              |
+| `feat: diff算法优化`          | LIS 最长递增子序列优化           |
+| `feat: Text节点渲染`          | Text 类型 VNode 渲染             |
+| `feat: Fragment节点渲染`      | Fragment 类型 VNode 渲染         |
+| `feat: vue组件渲染`           | 组件挂载 + 响应式更新            |
 
 ## 技术栈
 
