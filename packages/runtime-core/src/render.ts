@@ -10,6 +10,7 @@ import {
 import { getSequence } from "./seq";
 import { reactive, ReactiveEffect } from "@vue/reactivity";
 import { queueJob } from "./scheduler";
+import { createComponentInstance, setupComponent } from "./component";
 
 interface RenderOptions {
   insert(el: Element, parent: Element, anchor?: Element): void;
@@ -159,7 +160,7 @@ export function createRender(renderOptions: RenderOptions) {
         }
       }
     } else {
-      console.log("i e1 e2", i, e1, e2);
+      // console.log("i e1 e2", i, e1, e2);
       let s1 = i;
       let s2 = i;
       // s1-e1部分 和 s2-e2部分 不一样
@@ -296,75 +297,9 @@ export function createRender(renderOptions: RenderOptions) {
     }
   };
 
-  const initProps = (instance: ComponentInstance, rawProps) => {
-    const { propsOptions } = instance;
-    let props = {};
-    let attrs = {};
-    for (let key in rawProps) {
-      let value = rawProps[key];
-      if (key in propsOptions) {
-        props[key] = value;
-      } else {
-        attrs[key] = value;
-      }
-    }
-    instance.props = reactive(props);
-    instance.attrs = attrs;
-  };
-
-  const mountComponent = (vnode: Vnode, container) => {
-    const {
-      data = () => {},
-      render,
-      props: propsOptions = {},
-    } = vnode.type as ComponentType;
-    // 外部传进来的props
-    const rawProps = vnode.props;
-    // 将用到的数据变成响应式数据
-    const state = reactive(data());
-
-    const instance: ComponentInstance = {
-      isMounted: false,
-      subTree: null,
-      state,
-      update: null,
-      propsOptions: propsOptions,
-      props: {},
-      attrs: {},
-      proxy: null,
-    };
-    vnode.component = instance;
-    initProps(instance, rawProps);
-    const publicProperty = {
-      $attrs: (instance: ComponentInstance) => instance.attrs,
-    };
-    const proxy = new Proxy(instance, {
-      get(target, key, receiver) {
-        const { props, state } = target;
-        if (state && hasOwn(state, key)) {
-          return state[key];
-        } else if (props && hasOwn(props, key)) {
-          return props[key];
-        }
-        let getter = publicProperty[key];
-        if (getter) {
-          return getter(target);
-        }
-      },
-      set(target, key, newValue, receiver) {
-        const { props, state } = target;
-        if (state && hasOwn(state, key)) {
-          state[key] = newValue;
-          return true;
-        } else if (props && hasOwn(props, key)) {
-          console.warn("props is readonly");
-          // props[key] = newValue;
-        }
-      },
-    });
-
+  const setupRenderEffect = (instance: ComponentInstance, container) => {
     const componentUpdateFn = () => {
-      let subTree = render.call(proxy, proxy);
+      let subTree = instance.render.call(instance.proxy, instance.proxy);
       if (instance.isMounted) {
         patch(instance.subTree, subTree, container);
       } else {
@@ -381,6 +316,15 @@ export function createRender(renderOptions: RenderOptions) {
       effect.run();
     });
     update();
+  };
+
+  const mountComponent = (vnode: Vnode, container) => {
+    // 1.创建组件实例
+    const instance = createComponentInstance(vnode);
+    // 2.给组件实例赋值
+    setupComponent(instance);
+    // 3.绑定更新函数
+    setupRenderEffect(instance, container);
   };
 
   const processComponent = (n1: Vnode, n2: Vnode, container, anchor) => {

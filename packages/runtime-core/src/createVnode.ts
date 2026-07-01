@@ -9,12 +9,14 @@ export interface ComponentType {
 export interface ComponentInstance {
   isMounted: Boolean;
   subTree: Vnode;
-  state: any;
+  data: any;
+  render: Function;
   update: Function;
   propsOptions: Record<string | symbol, any>;
   props: Record<string | symbol, any>;
   attrs: Record<string | symbol, any>;
-  proxy: ProxyConstructor;
+  proxy: any;
+  vnode: Vnode;
 }
 
 export interface Vnode {

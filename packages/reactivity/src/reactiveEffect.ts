@@ -37,11 +37,11 @@ export function track(target, key) {
 // Map:{obj:{属性:Map:{effect,effect...}}}
 
 export function trigger(target: object, key, newValue, oldValue) {
-  console.log("targetMap", targetMap);
+  // console.log("targetMap", targetMap);
 
   let depsMap = targetMap.get(target);
   if (!depsMap) {
-    console.log("找不到depsMap");
+    // console.log("找不到depsMap");
     return;
   }
   let dep = depsMap.get(key);
