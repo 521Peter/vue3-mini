@@ -1,10 +1,10 @@
 # vue3-mini
 
-> 从零实现 Vue 3.4 核心机制 — 响应式系统 · 虚拟 DOM · Diff 算法 · 组件渲染
+> 从零实现 Vue 3 核心机制 — 响应式系统 · 虚拟 DOM · Diff 算法 · 组件渲染
 
 ## 项目简介
 
-本项目是一个**手写简化版 Vue 3.4**，深入理解并复现了 Vue 3 源码中的核心模块，包括响应式系统、虚拟 DOM 渲染引擎、Diff 算法与组件系统。使用 TypeScript 编写，基于 esbuild 构建，采用 Monorepo 架构组织多个包。
+本项目是一个**手写简化版 Vue 3**，深入理解并复现了 Vue 3 源码中的核心模块，包括响应式系统、虚拟 DOM 渲染引擎、Diff 算法与组件系统。后续将逐步引入最新 API（如 `defineModel`、`useTemplateRef`、`v-memo` 等）。使用 TypeScript 编写，基于 esbuild 构建，采用 Monorepo 架构组织多个包。
 
 ## 技术亮点
 
