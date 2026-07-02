@@ -3,6 +3,22 @@ import { ReactiveEffect } from "./effect";
 import { trackRefValue, triggerRefValue } from "./ref";
 import { DirtyLevel } from "./constants";
 
+export function computed(getterOrOptions) {
+  let onlyGetter = isFunction(getterOrOptions);
+
+  let getter;
+  let setter;
+  if (onlyGetter) {
+    getter = getterOrOptions;
+    setter = () => {};
+  } else {
+    getter = getterOrOptions.get;
+    setter = getterOrOptions.set;
+  }
+
+  return new ComputedRefImpl(getter, setter);
+}
+
 class ComputedRefImpl {
   public _value; // 用来保存上一次执行的结果
   public effect;
@@ -31,20 +47,4 @@ class ComputedRefImpl {
   set value(v) {
     this.setter(v);
   }
-}
-
-export function computed(getterOrOptions) {
-  let onlyGetter = isFunction(getterOrOptions);
-
-  let getter;
-  let setter;
-  if (onlyGetter) {
-    getter = getterOrOptions;
-    setter = () => {};
-  } else {
-    getter = getterOrOptions.get;
-    setter = getterOrOptions.set;
-  }
-
-  return new ComputedRefImpl(getter, setter);
 }
