@@ -74,8 +74,8 @@ export function setupComponent(instance: ComponentInstance) {
   const proxy = new Proxy(instance, handler);
   instance.proxy = proxy;
 
-  const { data } = instance.vnode.type as ComponentType;
-  if (!isFunction(data)) {
+  const { data = () => {} } = instance.vnode.type as ComponentType;
+  if (data && !isFunction(data)) {
     return console.warn("data must be a function");
   }
   instance.data = reactive(data.call(proxy));
