@@ -22,8 +22,8 @@ export class RefImpl {
     return this._value;
   }
   set value(newValue) {
-    if (this.value !== newValue) {
-      this._value = newValue;
+    if (this.rawValue !== newValue) {
+      this._value = toReactive(newValue);
       this.rawValue = newValue;
       triggerRefValue(this);
     }
