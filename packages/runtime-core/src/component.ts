@@ -12,6 +12,7 @@ export function createComponentInstance(vnode: Vnode) {
     update: null,
     // 组件内定义的属性
     propsOptions: (vnode.type as ComponentType).props,
+    // 当前组件应有的属性
     props: {},
     // attrs = 外部传入的属性 - 组件内定义的属性
     attrs: {},

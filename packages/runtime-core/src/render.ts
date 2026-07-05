@@ -301,11 +301,9 @@ export function createRender(renderOptions: RenderOptions) {
     instance: ComponentInstance,
     next: Vnode,
   ) => {
-    const prevProps = instance.vnode.props;
     instance.vnode = next;
     instance.next = null;
-
-    updateProps(instance, prevProps, next.props);
+    updateProps(instance, instance.props, next.props);
   };
 
   const setupRenderEffect = (instance: ComponentInstance, container) => {
@@ -371,8 +369,6 @@ export function createRender(renderOptions: RenderOptions) {
 
   const updateProps = (instance: ComponentInstance, prevProps, nextProps) => {
     if (hasPropsChanged(prevProps, nextProps)) {
-      console.log("has changed", prevProps, nextProps);
-
       for (let k in nextProps) {
         instance.props[k] = nextProps[k];
       }
