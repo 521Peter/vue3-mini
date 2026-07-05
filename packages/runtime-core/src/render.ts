@@ -301,9 +301,11 @@ export function createRender(renderOptions: RenderOptions) {
     instance: ComponentInstance,
     next: Vnode,
   ) => {
+    const prevProps = instance.vnode.props;
+    instance.vnode = next;
     instance.next = null;
 
-    updateProps(instance, instance.vnode.props, next.props);
+    updateProps(instance, prevProps, next.props);
   };
 
   const setupRenderEffect = (instance: ComponentInstance, container) => {
@@ -348,6 +350,9 @@ export function createRender(renderOptions: RenderOptions) {
   };
 
   const hasPropsChanged = (prevProps, nextProps) => {
+    prevProps = prevProps || {};
+    nextProps = nextProps || {};
+
     if (prevProps === nextProps) return false;
 
     const pKeys = Object.keys(prevProps);

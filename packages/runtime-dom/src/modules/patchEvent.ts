@@ -28,6 +28,7 @@ export default function patchEvent(
   } else if (!existingInvoker && nextValue) {
     // 之前没绑定，现在有值了。绑定事件
     const callback = createCallback(existingInvoker, nextValue);
+    invokers[name] = callback;
     el.addEventListener(eventName, callback);
   }
 }
