@@ -17,6 +17,7 @@ export interface ComponentInstance {
   attrs: Record<string | symbol, any>;
   proxy: any;
   vnode: Vnode;
+  next?: Vnode;
 }
 
 export interface Vnode {

@@ -297,16 +297,36 @@ export function createRender(renderOptions: RenderOptions) {
     }
   };
 
+  const updateComponentPreRender = (
+    instance: ComponentInstance,
+    next: Vnode,
+  ) => {
+    instance.next = null;
+
+    updateProps(instance, instance.vnode.props, next.props);
+  };
+
   const setupRenderEffect = (instance: ComponentInstance, container) => {
+    const { render } = instance;
     const componentUpdateFn = () => {
-      let subTree = instance.render.call(instance.proxy, instance.proxy);
       if (instance.isMounted) {
+        // 组件更新
+        const { next } = instance;
+        // 如果有next，说明要更新属性或者插槽
+        if (next) {
+          updateComponentPreRender(instance, next);
+        }
+
+        const subTree = render.call(instance.proxy, instance.proxy);
         patch(instance.subTree, subTree, container);
+        instance.subTree = subTree;
       } else {
+        // 组件挂载
+        const subTree = render.call(instance.proxy, instance.proxy);
         patch(null, subTree, container);
+        instance.subTree = subTree;
+        instance.isMounted = true;
       }
-      instance.subTree = subTree;
-      instance.isMounted = true;
     };
 
     const effect = new ReactiveEffect(componentUpdateFn, () =>
@@ -327,12 +347,61 @@ export function createRender(renderOptions: RenderOptions) {
     setupRenderEffect(instance, container);
   };
 
+  const hasPropsChanged = (prevProps, nextProps) => {
+    if (prevProps === nextProps) return false;
+
+    const pKeys = Object.keys(prevProps);
+    const nKeys = Object.keys(nextProps);
+
+    if (nKeys.length !== pKeys.length) {
+      return true;
+    }
+    for (let k of nKeys) {
+      if (nextProps[k] !== prevProps[k]) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const updateProps = (instance: ComponentInstance, prevProps, nextProps) => {
+    if (hasPropsChanged(prevProps, nextProps)) {
+      console.log("has changed", prevProps, nextProps);
+
+      for (let k in nextProps) {
+        instance.props[k] = nextProps[k];
+      }
+      for (let k in prevProps) {
+        if (!(k in nextProps)) {
+          delete instance.props[k];
+        }
+      }
+    }
+  };
+
+  const shouldComponentUpdate = (n1: Vnode, n2: Vnode) => {
+    const { props: prevProps, children: prevChildren } = n1;
+    const { props: nextProps, children: nextChildren } = n2;
+    return hasPropsChanged(prevProps, nextProps);
+  };
+
+  const updateComponent = (n1: Vnode, n2: Vnode) => {
+    const instance = (n2.component = n1.component);
+
+    if (shouldComponentUpdate(n1, n2)) {
+      instance.next = n2;
+      instance.update();
+    }
+  };
+
   const processComponent = (n1: Vnode, n2: Vnode, container, anchor) => {
+    // console.log("虚拟节点", n1, n2);
+
     if (n1 === null) {
       // 挂载组件
       mountComponent(n2, container);
     } else {
-      // patchComponent(n1, n2, container);
+      updateComponent(n1, n2);
     }
   };
 
@@ -361,7 +430,6 @@ export function createRender(renderOptions: RenderOptions) {
         patchFragment(n1, n2, container);
         break;
       default:
-        // debugger;
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, anchor);
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
