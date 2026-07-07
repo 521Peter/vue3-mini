@@ -1,14 +1,13 @@
 import { hasOwn, isFunction } from "@vue/shared";
 import { ComponentInstance, ComponentType, Vnode } from "./createVnode";
-import { reactive } from "@vue/reactivity";
+import { proxyRefs, reactive } from "@vue/reactivity";
 
 export function createComponentInstance(vnode: Vnode) {
-  const { render } = vnode.type as ComponentType;
   const instance: ComponentInstance = {
     isMounted: false,
     subTree: null,
     data: null,
-    render,
+    render: null,
     update: null,
     // 组件内定义的属性
     propsOptions: (vnode.type as ComponentType).props,
@@ -18,6 +17,7 @@ export function createComponentInstance(vnode: Vnode) {
     attrs: {},
     proxy: null,
     vnode,
+    setupState: {},
   };
   vnode.component = instance;
   return instance;
@@ -45,11 +45,13 @@ const publicProperty = {
 
 const handler = {
   get(target, key, receiver) {
-    const { props, data } = target;
+    const { props, data, setupState } = target;
     if (data && hasOwn(data, key)) {
       return data[key];
     } else if (props && hasOwn(props, key)) {
       return props[key];
+    } else if (setupState && hasOwn(setupState, key)) {
+      return setupState[key];
     }
     let getter = publicProperty[key];
     if (getter) {
@@ -57,13 +59,15 @@ const handler = {
     }
   },
   set(target, key, newValue, receiver) {
-    const { props, data } = target;
+    const { props, data, setupState } = target;
     if (data && hasOwn(data, key)) {
       data[key] = newValue;
     } else if (props && hasOwn(props, key)) {
       console.warn("props is readonly");
       // props[key] = newValue;
       return false;
+    } else if (setupState && hasOwn(setupState, key)) {
+      setupState[key] = newValue;
     }
     return true;
   },
@@ -75,9 +79,27 @@ export function setupComponent(instance: ComponentInstance) {
   const proxy = new Proxy(instance, handler);
   instance.proxy = proxy;
 
-  const { data = () => {} } = instance.vnode.type as ComponentType;
+  const {
+    data = () => {},
+    render,
+    setup,
+  } = instance.vnode.type as ComponentType;
   if (data && !isFunction(data)) {
     return console.warn("data must be a function");
+  }
+  if (setup) {
+    const setupResult = setup(proxy, {});
+    if (isFunction(setupResult)) {
+      instance.render = setupResult as Function;
+    } else {
+      // ref自动解包
+      instance.setupState = proxyRefs(
+        setupResult as Record<string | symbol, any>,
+      );
+    }
+  }
+  if (!instance.render) {
+    instance.render = render;
   }
   instance.data = reactive(data.call(proxy));
 }
