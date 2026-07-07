@@ -1,4 +1,4 @@
-import { hasOwn, isFunction } from "@vue/shared";
+import { hasOwn, isFunction, ShapeFlags } from "@vue/shared";
 import { ComponentInstance, ComponentType, Vnode } from "./createVnode";
 import { proxyRefs, reactive } from "@vue/reactivity";
 
@@ -18,6 +18,7 @@ export function createComponentInstance(vnode: Vnode) {
     proxy: null,
     vnode,
     setupState: {},
+    slots: {},
   };
   vnode.component = instance;
   return instance;
@@ -39,8 +40,17 @@ const initProps = (instance: ComponentInstance, rawProps) => {
   instance.attrs = attrs;
 };
 
+const initSlots = (instance: ComponentInstance, children) => {
+  if (instance.vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
+    instance.slots = children;
+  } else {
+    instance.slots = {};
+  }
+};
+
 const publicProperty = {
   $attrs: (instance: ComponentInstance) => instance.attrs,
+  $slots: (instance: ComponentInstance) => instance.slots,
 };
 
 const handler = {
@@ -75,6 +85,8 @@ const handler = {
 
 export function setupComponent(instance: ComponentInstance) {
   initProps(instance, instance.vnode.props);
+  initSlots(instance, instance.vnode.children);
+  // console.log("instance", instance);
 
   const proxy = new Proxy(instance, handler);
   instance.proxy = proxy;

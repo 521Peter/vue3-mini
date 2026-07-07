@@ -28,6 +28,7 @@ export interface ComponentInstance {
   vnode: Vnode;
   next?: Vnode;
   setupState: Record<string | symbol, any>;
+  slots: Record<string | symbol, any>;
 }
 
 export interface Vnode {
@@ -66,6 +67,10 @@ export function createVnode(type, props, children?): Vnode {
   if (isArray(children)) {
     vnode.children = children;
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.ARRAY_CHILDREN;
+  } else if (isObject(children)) {
+    // 说明是插槽
+    vnode.children = children;
+    vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.SLOTS_CHILDREN;
   } else {
     vnode.children = children ? String(children) : null;
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.TEXT_CHILDREN;
