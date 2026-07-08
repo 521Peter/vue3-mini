@@ -19,13 +19,14 @@ export function createComponentInstance(vnode: Vnode) {
     vnode,
     setupState: {},
     slots: {},
+    exposed: null,
   };
   vnode.component = instance;
   return instance;
 }
 
 const initProps = (instance: ComponentInstance, rawProps) => {
-  const { propsOptions } = instance;
+  const { propsOptions = {} } = instance;
   let props = {};
   let attrs = {};
   for (let key in rawProps) {
@@ -100,7 +101,20 @@ export function setupComponent(instance: ComponentInstance) {
     return console.warn("data must be a function");
   }
   if (setup) {
-    const setupResult = setup(proxy, {});
+    const setupContext = {
+      slots: instance.slots,
+      attrs: instance.attrs,
+      emit: (e, ...args) => {
+        const eventName = `on${e[0].toUpperCase() + e.slice(1)}`;
+
+        const handler = instance.vnode.props[eventName];
+        handler && handler(...args);
+      },
+      expose: (obj) => {
+        instance.exposed = obj;
+      },
+    };
+    const setupResult = setup(proxy, setupContext);
     if (isFunction(setupResult)) {
       instance.render = setupResult as Function;
     } else {

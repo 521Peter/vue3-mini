@@ -29,6 +29,7 @@ export interface ComponentInstance {
   next?: Vnode;
   setupState: Record<string | symbol, any>;
   slots: Record<string | symbol, any>;
+  exposed: Record<string | symbol, any> | null;
 }
 
 export interface Vnode {
