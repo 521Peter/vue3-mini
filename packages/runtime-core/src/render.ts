@@ -64,9 +64,12 @@ export function createRender(renderOptions: RenderOptions) {
   };
 
   const unmount = (vnode: Vnode) => {
-    const { type } = vnode;
+    const { type, shapeFlag } = vnode;
     if (type === Fragment) {
       unmountChildren(vnode.children);
+    } else if (shapeFlag & ShapeFlags.COMPONENT) {
+      // 组件卸载
+      unmount(vnode.component.subTree);
     } else {
       hostRemove(vnode.el);
     }
