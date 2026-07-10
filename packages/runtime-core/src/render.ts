@@ -307,8 +307,21 @@ export function createRender(renderOptions: RenderOptions) {
     updateProps(instance, instance.props, next.props);
   };
 
+  const renderComponent = (instance: ComponentInstance) => {
+    const { proxy, attrs, vnode } = instance;
+    if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+      console.log(111);
+
+      return render.call(proxy, proxy);
+    } else {
+      console.log("vnode.type", vnode.type);
+      // 函数式渲染
+      return (vnode.type as Function).call(attrs, attrs);
+    }
+  };
+
   const setupRenderEffect = (instance: ComponentInstance, container) => {
-    const { render, m, bm, u, bu } = instance;
+    const { m, bm, u, bu } = instance;
     const componentUpdateFn = () => {
       if (instance.isMounted) {
         bu && runHooks(bu);
@@ -319,14 +332,14 @@ export function createRender(renderOptions: RenderOptions) {
           updateComponentPreRender(instance, next);
         }
 
-        const subTree = render.call(instance.proxy, instance.proxy);
+        const subTree = renderComponent(instance);
         patch(instance.subTree, subTree, container);
         instance.subTree = subTree;
         u && runHooks(u);
       } else {
         bm && runHooks(bm);
         // 组件挂载
-        const subTree = render.call(instance.proxy, instance.proxy);
+        const subTree = renderComponent(instance);
         patch(null, subTree, container);
         instance.subTree = subTree;
         instance.isMounted = true;

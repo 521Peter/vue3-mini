@@ -1,9 +1,15 @@
-import { isArray, isObject, isString, ShapeFlags } from "@vue/shared";
+import {
+  isArray,
+  isFunction,
+  isObject,
+  isString,
+  ShapeFlags,
+} from "@vue/shared";
 import { ComponentType, ComponentInstance } from "./component";
 
 export interface Vnode {
   __v_isVNode: boolean;
-  type: string | symbol | ComponentType;
+  type: string | symbol | ComponentType | Function;
   props: Record<string, any>;
   key?: string | number;
   children: null | Array<any> | string;
@@ -21,11 +27,17 @@ export const Fragment = Symbol("Fragment");
 // 必须传固定参数：props为属性；children为数组
 export function createVnode(type, props, children?): Vnode {
   // type为对象时，说明是组件类型
-  let shapeFlag = isString(type)
-    ? ShapeFlags.ELEMENT
-    : isObject(type)
-      ? ShapeFlags.STATEFUL_COMPONENT
-      : 0;
+  let shapeFlag = 0;
+  if (isString(type)) {
+    shapeFlag = ShapeFlags.ELEMENT;
+  } else if (isFunction(type)) {
+    shapeFlag = ShapeFlags.FUNCTIONAL_COMPONENT;
+  } else if (isObject(type)) {
+    shapeFlag = ShapeFlags.STATEFUL_COMPONENT;
+  } else {
+    shapeFlag = 0;
+  }
+
   let vnode = {
     __v_isVNode: true,
     type,
