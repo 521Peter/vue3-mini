@@ -1,36 +1,5 @@
 import { isArray, isObject, isString, ShapeFlags } from "@vue/shared";
-
-export interface ComponentType {
-  data: Function;
-  render: Function;
-  props: Record<string, any>;
-  setup?: (
-    props: Record<string | symbol, any>,
-    ctx: Partial<{
-      emit: Function;
-      attrs: Record<string | symbol, any>;
-      slots: Record<string | symbol, any>;
-      expose: Function;
-    }>,
-  ) => Record<string | symbol, any> | Function;
-}
-
-export interface ComponentInstance {
-  isMounted: Boolean;
-  subTree: Vnode;
-  data: any;
-  render: Function;
-  update: Function;
-  propsOptions: Record<string | symbol, any>;
-  props: Record<string | symbol, any>;
-  attrs: Record<string | symbol, any>;
-  proxy: any;
-  vnode: Vnode;
-  next?: Vnode;
-  setupState: Record<string | symbol, any>;
-  slots: Record<string | symbol, any>;
-  exposed: Record<string | symbol, any> | null;
-}
+import { ComponentType, ComponentInstance } from "./component";
 
 export interface Vnode {
   __v_isVNode: boolean;

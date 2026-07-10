@@ -1,6 +1,48 @@
 import { hasOwn, isFunction, ShapeFlags } from "@vue/shared";
-import { ComponentInstance, ComponentType, Vnode } from "./createVnode";
+import { Vnode } from "./createVnode";
 import { proxyRefs, reactive } from "@vue/reactivity";
+import { LifecycleHooks, LifecycleHook } from "./apiLifecycle";
+
+export interface ComponentType {
+  data: Function;
+  render: Function;
+  props: Record<string, any>;
+  setup?: (
+    props: Record<string | symbol, any>,
+    ctx: Partial<{
+      emit: Function;
+      attrs: Record<string | symbol, any>;
+      slots: Record<string | symbol, any>;
+      expose: Function;
+    }>,
+  ) => Record<string | symbol, any> | Function;
+}
+
+export interface ComponentInstance {
+  isMounted: Boolean;
+  subTree: Vnode;
+  data: any;
+  render: Function;
+  update: Function;
+  propsOptions: Record<string | symbol, any>;
+  props: Record<string | symbol, any>;
+  attrs: Record<string | symbol, any>;
+  proxy: any;
+  vnode: Vnode;
+  next?: Vnode;
+  setupState: Record<string | symbol, any>;
+  slots: Record<string | symbol, any>;
+  exposed: Record<string | symbol, any> | null;
+  // 生命周期
+  /** 挂载前 */
+  [LifecycleHooks.BEFORE_MOUNT]?: LifecycleHook;
+  /** 挂载后 */
+  [LifecycleHooks.MOUNTED]?: LifecycleHook;
+  /** 更新前 */
+  [LifecycleHooks.BEFORE_UPDATE]?: LifecycleHook;
+  /** 更新后 */
+  [LifecycleHooks.UPDATED]?: LifecycleHook;
+}
 
 export function createComponentInstance(vnode: Vnode) {
   const instance: ComponentInstance = {
@@ -21,6 +63,7 @@ export function createComponentInstance(vnode: Vnode) {
     slots: {},
     exposed: null,
   };
+
   vnode.component = instance;
   return instance;
 }
@@ -114,7 +157,9 @@ export function setupComponent(instance: ComponentInstance) {
         instance.exposed = obj;
       },
     };
+    setCurrentInstance(instance);
     const setupResult = setup(proxy, setupContext);
+    unSetCurrentInstance();
     if (isFunction(setupResult)) {
       instance.render = setupResult as Function;
     } else {
@@ -129,3 +174,14 @@ export function setupComponent(instance: ComponentInstance) {
   }
   instance.data = reactive(data.call(proxy));
 }
+
+export let currentInstance = null;
+export const getCurrentInstance = () => {
+  return currentInstance;
+};
+export const setCurrentInstance = (instance) => {
+  currentInstance = instance;
+};
+export const unSetCurrentInstance = () => {
+  currentInstance = null;
+};

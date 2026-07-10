@@ -1,16 +1,14 @@
 import { hasOwn, ShapeFlags } from "@vue/shared";
-import {
-  isSameVNode,
-  Vnode,
-  Text,
-  Fragment,
-  ComponentType,
-  ComponentInstance,
-} from "./createVnode";
+import { isSameVNode, Vnode, Text, Fragment } from "./createVnode";
 import { getSequence } from "./seq";
 import { reactive, ReactiveEffect } from "@vue/reactivity";
 import { queueJob } from "./scheduler";
-import { createComponentInstance, setupComponent } from "./component";
+import {
+  ComponentInstance,
+  createComponentInstance,
+  setupComponent,
+} from "./component";
+import { runHooks } from "./apiLifecycle";
 
 interface RenderOptions {
   insert(el: Element, parent: Element, anchor?: Element): void;
@@ -310,9 +308,10 @@ export function createRender(renderOptions: RenderOptions) {
   };
 
   const setupRenderEffect = (instance: ComponentInstance, container) => {
-    const { render } = instance;
+    const { render, m, bm, u, bu } = instance;
     const componentUpdateFn = () => {
       if (instance.isMounted) {
+        bu && runHooks(bu);
         // 组件更新
         const { next } = instance;
         // 如果有next，说明要更新属性或者插槽
@@ -323,12 +322,15 @@ export function createRender(renderOptions: RenderOptions) {
         const subTree = render.call(instance.proxy, instance.proxy);
         patch(instance.subTree, subTree, container);
         instance.subTree = subTree;
+        u && runHooks(u);
       } else {
+        bm && runHooks(bm);
         // 组件挂载
         const subTree = render.call(instance.proxy, instance.proxy);
         patch(null, subTree, container);
         instance.subTree = subTree;
         instance.isMounted = true;
+        m && runHooks(m);
       }
     };
 
