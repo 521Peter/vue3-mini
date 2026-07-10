@@ -11,6 +11,7 @@ export interface Vnode {
   // el?: HTMLElement | Text;
   el?;
   component?: ComponentInstance;
+  ref: any;
 }
 
 export const Text = Symbol("Text");
@@ -32,6 +33,7 @@ export function createVnode(type, props, children?): Vnode {
     key: props?.key || null,
     children: null,
     shapeFlag,
+    ref: props?.ref || null,
   };
 
   if (isArray(children)) {

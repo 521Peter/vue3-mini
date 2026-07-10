@@ -1,7 +1,7 @@
 import { hasOwn, ShapeFlags } from "@vue/shared";
 import { isSameVNode, Vnode, Text, Fragment } from "./createVnode";
 import { getSequence } from "./seq";
-import { reactive, ReactiveEffect } from "@vue/reactivity";
+import { isRef, reactive, ReactiveEffect } from "@vue/reactivity";
 import { queueJob } from "./scheduler";
 import {
   ComponentInstance,
@@ -426,7 +426,7 @@ export function createRender(renderOptions: RenderOptions) {
       n1 = null;
     }
 
-    const { type, shapeFlag } = n2;
+    const { type, shapeFlag, ref } = n2;
 
     switch (type) {
       case Text:
@@ -441,6 +441,23 @@ export function createRender(renderOptions: RenderOptions) {
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           processComponent(n1, n2, container, anchor);
         }
+    }
+
+    setRef(ref, n2);
+  };
+
+  const setRef = (rawRef, vnode: Vnode) => {
+    const { shapeFlag, el, component } = vnode;
+    let value = null;
+    if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+      // vnode是组件
+      value = component?.exposed ? component.exposed : component.proxy;
+    } else {
+      // vnode是普通元素
+      value = el;
+    }
+    if (isRef(rawRef)) {
+      rawRef.value = value;
     }
   };
 
