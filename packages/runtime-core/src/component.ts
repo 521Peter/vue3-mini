@@ -42,9 +42,14 @@ export interface ComponentInstance {
   [LifecycleHooks.BEFORE_UPDATE]?: LifecycleHook;
   /** 更新后 */
   [LifecycleHooks.UPDATED]?: LifecycleHook;
+  parent: ComponentInstance;
+  provides: null | Record<string, any>;
 }
 
-export function createComponentInstance(vnode: Vnode) {
+export function createComponentInstance(
+  vnode: Vnode,
+  parent: ComponentInstance,
+) {
   const instance: ComponentInstance = {
     isMounted: false,
     subTree: null,
@@ -62,6 +67,9 @@ export function createComponentInstance(vnode: Vnode) {
     setupState: {},
     slots: {},
     exposed: null,
+    parent: parent,
+    // 继承父组件中的provides，一代代传承下来
+    provides: parent ? parent.provides : Object.create(null),
   };
 
   vnode.component = instance;
@@ -175,7 +183,7 @@ export function setupComponent(instance: ComponentInstance) {
   instance.data = reactive(data.call(proxy));
 }
 
-export let currentInstance = null;
+export let currentInstance: ComponentInstance = null;
 export const getCurrentInstance = () => {
   return currentInstance;
 };

@@ -308,10 +308,8 @@ export function createRender(renderOptions: RenderOptions) {
   };
 
   const renderComponent = (instance: ComponentInstance) => {
-    const { proxy, attrs, vnode } = instance;
+    const { proxy, attrs, vnode, render } = instance;
     if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-      console.log(111);
-
       return render.call(proxy, proxy);
     } else {
       console.log("vnode.type", vnode.type);
@@ -333,14 +331,14 @@ export function createRender(renderOptions: RenderOptions) {
         }
 
         const subTree = renderComponent(instance);
-        patch(instance.subTree, subTree, container);
+        patch(instance.subTree, subTree, container, null, instance);
         instance.subTree = subTree;
         u && runHooks(u);
       } else {
         bm && runHooks(bm);
         // 组件挂载
         const subTree = renderComponent(instance);
-        patch(null, subTree, container);
+        patch(null, subTree, container, null, instance);
         instance.subTree = subTree;
         instance.isMounted = true;
         m && runHooks(m);
@@ -356,9 +354,13 @@ export function createRender(renderOptions: RenderOptions) {
     update();
   };
 
-  const mountComponent = (vnode: Vnode, container) => {
+  const mountComponent = (
+    vnode: Vnode,
+    container,
+    parentInstance: ComponentInstance,
+  ) => {
     // 1.创建组件实例
-    const instance = createComponentInstance(vnode);
+    const instance = createComponentInstance(vnode, parentInstance);
     // 2.给组件实例赋值
     setupComponent(instance);
     // 3.绑定更新函数
@@ -413,12 +415,18 @@ export function createRender(renderOptions: RenderOptions) {
     }
   };
 
-  const processComponent = (n1: Vnode, n2: Vnode, container, anchor) => {
+  const processComponent = (
+    n1: Vnode,
+    n2: Vnode,
+    container,
+    anchor,
+    parentInstance: ComponentInstance,
+  ) => {
     // console.log("虚拟节点", n1, n2);
 
     if (n1 === null) {
       // 挂载组件
-      mountComponent(n2, container);
+      mountComponent(n2, container, parentInstance);
     } else {
       updateComponent(n1, n2);
     }
@@ -429,6 +437,7 @@ export function createRender(renderOptions: RenderOptions) {
     n2: Vnode,
     container,
     anchor: null | HTMLElement = null,
+    parentInstance?: ComponentInstance,
   ) => {
     // 相同节点不做处理
     if (n1 === n2) return;
@@ -452,7 +461,7 @@ export function createRender(renderOptions: RenderOptions) {
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, anchor);
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
-          processComponent(n1, n2, container, anchor);
+          processComponent(n1, n2, container, anchor, parentInstance || null);
         }
     }
 
