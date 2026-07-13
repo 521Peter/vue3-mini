@@ -49,6 +49,14 @@ export function createVnode(type, props, children?): Vnode {
   };
 
   if (isArray(children)) {
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      // 将子节点转化为虚拟节点
+      if (!isObject(child)) {
+        children[i] = createVnode(Text, null, String(child));
+      }
+    }
+
     vnode.children = children;
     vnode.shapeFlag = vnode.shapeFlag | ShapeFlags.ARRAY_CHILDREN;
   } else if (isObject(children)) {
