@@ -6,6 +6,7 @@ import {
   ShapeFlags,
 } from "@vue/shared";
 import { ComponentType, ComponentInstance } from "./component";
+import { isTeleport } from "./Teleport";
 
 export interface Vnode {
   __v_isVNode: boolean;
@@ -18,6 +19,7 @@ export interface Vnode {
   el?;
   component?: ComponentInstance;
   ref: any;
+  target?: string;
 }
 
 export const Text = Symbol("Text");
@@ -30,6 +32,8 @@ export function createVnode(type, props, children?): Vnode {
   let shapeFlag = 0;
   if (isString(type)) {
     shapeFlag = ShapeFlags.ELEMENT;
+  } else if (isTeleport(type)) {
+    shapeFlag = ShapeFlags.TELEPORT;
   } else if (isFunction(type)) {
     shapeFlag = ShapeFlags.FUNCTIONAL_COMPONENT;
   } else if (isObject(type)) {

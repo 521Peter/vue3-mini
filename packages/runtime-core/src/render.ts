@@ -65,6 +65,8 @@ export function createRender(renderOptions: RenderOptions) {
     const { type, shapeFlag } = vnode;
     if (type === Fragment) {
       unmountChildren(vnode.children);
+    } else if (shapeFlag & ShapeFlags.TELEPORT) {
+      (type as any).remove(vnode, unmountChildren);
     } else if (shapeFlag & ShapeFlags.COMPONENT) {
       // 组件卸载
       unmount(vnode.component.subTree);
@@ -460,6 +462,26 @@ export function createRender(renderOptions: RenderOptions) {
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, anchor);
+        } else if (shapeFlag & ShapeFlags.TELEPORT) {
+          const internals = {
+            mountChildren,
+            patchChildren,
+            move(vnode, container, anchor) {
+              hostInsert(
+                vnode.component ? vnode.component.subTree.el : vnode.el,
+                container,
+                anchor,
+              );
+            },
+          };
+          (type as any).process(
+            n1,
+            n2,
+            container,
+            anchor,
+            parentInstance,
+            internals,
+          );
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           processComponent(n1, n2, container, anchor, parentInstance || null);
         }
