@@ -42,8 +42,8 @@ export function createRender(renderOptions: RenderOptions) {
   };
 
   // 将虚拟节点挂载到真实dom上
-  const mountElement = (vnode, container: HTMLElement, anchor) => {
-    const { type, props, children, shapeFlag } = vnode;
+  const mountElement = (vnode: Vnode, container: HTMLElement, anchor) => {
+    const { type, props, children, shapeFlag, transition } = vnode;
     const ele = hostCreateElement(type);
     vnode.el = ele;
     // 按位&运算
@@ -58,11 +58,21 @@ export function createRender(renderOptions: RenderOptions) {
     for (let k in props) {
       hostPatchProp(ele, k, null, props[k]);
     }
+
+    if (transition) {
+      transition.beforeEnter(ele);
+    }
+
     hostInsert(ele, container, anchor);
+
+    if (transition) {
+      transition.enter(ele);
+    }
   };
 
   const unmount = (vnode: Vnode) => {
-    const { type, shapeFlag } = vnode;
+    const { type, shapeFlag, transition, el } = vnode;
+    const performRemove = () => hostRemove(vnode.el);
     if (type === Fragment) {
       unmountChildren(vnode.children);
     } else if (shapeFlag & ShapeFlags.TELEPORT) {
@@ -71,7 +81,11 @@ export function createRender(renderOptions: RenderOptions) {
       // 组件卸载
       unmount(vnode.component.subTree);
     } else {
-      hostRemove(vnode.el);
+      if (transition) {
+        transition.leave(el, performRemove);
+      } else {
+        performRemove();
+      }
     }
   };
 
@@ -307,16 +321,18 @@ export function createRender(renderOptions: RenderOptions) {
     instance.vnode = next;
     instance.next = null;
     updateProps(instance, instance.props, next.props);
+
+    Object.assign(instance.slots, next.children);
   };
 
   const renderComponent = (instance: ComponentInstance) => {
-    const { proxy, attrs, vnode, render } = instance;
+    const { proxy, attrs, vnode, render, slots } = instance;
     if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
       return render.call(proxy, proxy);
     } else {
       console.log("vnode.type", vnode.type);
       // 函数式渲染
-      return (vnode.type as Function).call(attrs, attrs);
+      return (vnode as any).type(attrs, { slots });
     }
   };
 
@@ -405,7 +421,10 @@ export function createRender(renderOptions: RenderOptions) {
   const shouldComponentUpdate = (n1: Vnode, n2: Vnode) => {
     const { props: prevProps, children: prevChildren } = n1;
     const { props: nextProps, children: nextChildren } = n2;
-    return hasPropsChanged(prevProps, nextProps);
+    return (
+      hasPropsChanged(prevProps, nextProps) ||
+      prevChildren !== nextChildren
+    );
   };
 
   const updateComponent = (n1: Vnode, n2: Vnode) => {

@@ -6,7 +6,7 @@ import {
   ShapeFlags,
 } from "@vue/shared";
 import { ComponentType, ComponentInstance } from "./component";
-import { isTeleport } from "./Teleport";
+import { isTeleport } from "./components/Teleport";
 
 export interface Vnode {
   __v_isVNode: boolean;
@@ -20,6 +20,11 @@ export interface Vnode {
   component?: ComponentInstance;
   ref: any;
   target?: string;
+  transition?: {
+    beforeEnter: Function;
+    enter: Function;
+    leave: Function;
+  };
 }
 
 export const Text = Symbol("Text");
